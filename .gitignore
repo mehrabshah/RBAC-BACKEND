@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Dependency directories
+/yarn-error.log
+npm-debug.log*
+
+# Compiled source
+/dist/
+/out/
+
+# Dependency directories
+# (Avoid uploading node_modules folder)
