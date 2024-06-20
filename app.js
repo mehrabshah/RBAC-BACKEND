@@ -9,7 +9,6 @@ const authRoutes = require('./routes/authRoute');
 connectDB();
 app.use(express.json());  
 app.use(express.urlencoded());  
-
 app.use('/api/auth', authRoutes);
 
 
