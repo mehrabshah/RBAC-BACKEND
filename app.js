@@ -17,7 +17,6 @@ app.use('/api/doctor', doctorRoutes);
 app.use('/api/patient', patientRoutes);
 
 
-
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
