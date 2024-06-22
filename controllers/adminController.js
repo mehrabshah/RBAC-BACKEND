@@ -1,7 +1,6 @@
 const createAdminProfile =(req,res)=>{
      try{
 
-        console.log("subuhi",req)
         res.json({ msg: "Admin Profile Created Successfully" });
      }   
      catch(error){

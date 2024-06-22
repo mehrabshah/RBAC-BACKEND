@@ -29,7 +29,7 @@ const loginUser = async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
     const payload = { user: { id: user.id, role: user.role } };
     const token = jwt.sign(payload, "your_jwt_secret", { expiresIn: "1h" });
-    res.json({ token });
+    res.json({ token, role: user.role });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");

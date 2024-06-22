@@ -5,7 +5,7 @@ const { roleMiddleware } = require('../middleware/roleMiddleware')
 
 const router = express.Router();
 
-router.post('/createProfile',authMiddleware, roleMiddleware(['doctor']), doctorController.createDoctorProfile);
+router.get('/createProfile',authMiddleware, roleMiddleware(['doctor']), doctorController.createDoctorProfile);
 
 
 module.exports = router;
