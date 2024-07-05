@@ -1,6 +1,9 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/userModel");
+const Otp = require("../models/otpModel");
+const nodemailer = require("nodemailer");
+const otpGenerator = require("otp-generator");
 
 const registerUser = async (req, res) => {
   const { email, password, role } = req.body;
@@ -36,4 +39,67 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser,loginUser };
+const sendOTP = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "Email not found" });
+    }
+    const otp = otpGenerator.generate(6, {
+      digits: true,
+      upperCaseAlphabets: false,
+      specialChars: false,
+      lowerCaseAlphabets: false,
+    });
+    const otpExpires = Date.now() +  600000;;
+    await Otp.updateOne({ email }, { otp, otpExpires }, { upsert: true });
+
+    const transporter = nodemailer.createTransport({
+      service: "Gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your OTP Code",
+      text: `Your OTP code is ${otp}.Please verify the code within 10 mins`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).send("Error sending OTP");
+      }
+      res.status(200).send("OTP sent successfully");
+    });
+  } catch (error) {
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+const verifyOTP = async (req, res) => {
+
+  const { otp, email } = req.body;
+  try {
+    const otpInfo = await Otp.findOne({ email });
+    if (otpInfo && otpInfo.otp === otp && otpInfo.otpExpires > Date.now()) {
+
+
+      const payload = { otp: { id: otpInfo.id } };
+      const token = jwt.sign(payload, "your_jwt_secret", { expiresIn: "1h" });
+
+      return res.status(200).json({ message: 'OTP verified successfully', token });
+
+    }
+    res.status(400).json({ error: "Invalid or expired OTP" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+module.exports = { registerUser, loginUser, sendOTP , verifyOTP };
