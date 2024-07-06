@@ -53,7 +53,7 @@ const sendOTP = async (req, res) => {
       specialChars: false,
       lowerCaseAlphabets: false,
     });
-    const otpExpires = Date.now() +  600000;;
+    const otpExpires = Date.now() + 600000;
     await Otp.updateOne({ email }, { otp, otpExpires }, { upsert: true });
 
     const transporter = nodemailer.createTransport({
@@ -83,18 +83,16 @@ const sendOTP = async (req, res) => {
 };
 
 const verifyOTP = async (req, res) => {
-
   const { otp, email } = req.body;
   try {
     const otpInfo = await Otp.findOne({ email });
-    if (otpInfo && otpInfo.otp === otp && otpInfo.otpExpires > Date.now()) {
+    const user = await User.findOne({ email });
 
 
-      const payload = { otp: { id: otpInfo.id } };
+    if (user && otpInfo.otp === otp && otpInfo.otpExpires > Date.now()) {
+      const payload = { user: { id: user.id} };
       const token = jwt.sign(payload, "your_jwt_secret", { expiresIn: "1h" });
-
-      return res.status(200).json({ message: 'OTP verified successfully', token });
-
+      return res.status(200).json({ message: "OTP verified successfully", token });
     }
     res.status(400).json({ error: "Invalid or expired OTP" });
   } catch (error) {
@@ -102,4 +100,26 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, sendOTP , verifyOTP };
+const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password, confirmPassword } = req.body;
+  if (password != confirmPassword) {
+    return res.status(400).json({ error: "Password do not match" });
+  }
+  try {
+    const decoded = jwt.verify(token, "your_jwt_secret");
+    const userId = decoded.user.id;
+    const user = await User.findOne({ _id: userId} );
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    await user.save();
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    res.status(400).json({ error: "Invalid or expired token " });
+  }
+};
+
+module.exports = { registerUser, loginUser, sendOTP, verifyOTP, resetPassword };
